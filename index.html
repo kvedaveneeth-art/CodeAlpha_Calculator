@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculator – CodeAlpha</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Share+Tech+Mono&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f1a;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .brand {
+      color: #7c6dfa;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+
+    .calculator {
+      background: #1a1a2e;
+      border-radius: 24px;
+      padding: 24px;
+      width: 340px;
+      box-shadow:
+        0 0 0 1px rgba(124,109,250,0.15),
+        0 32px 64px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    /* Display */
+    .display {
+      background: #0f0f1a;
+      border-radius: 14px;
+      padding: 20px 20px 14px;
+      margin-bottom: 20px;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-end;
+      border: 1px solid rgba(124,109,250,0.12);
+    }
+
+    .expression {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.35);
+      min-height: 1.2em;
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+
+    .result {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 2.4rem;
+      color: #ffffff;
+      line-height: 1;
+      word-break: break-all;
+      transition: font-size 0.1s ease;
+    }
+
+    .result.small { font-size: 1.6rem; }
+    .result.error { color: #ff6b6b; font-size: 1.1rem; }
+
+    /* Button grid */
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      height: 64px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:active { transform: scale(0.93); }
+    button:focus-visible { box-shadow: 0 0 0 2px #7c6dfa; }
+
+    /* Number & decimal */
+    .btn-num {
+      background: #252540;
+      color: #e0e0ff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .btn-num:hover { background: #2e2e52; filter: brightness(1.1); }
+
+    /* Operators */
+    .btn-op {
+      background: linear-gradient(135deg, #7c6dfa, #5b4fd4);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(124,109,250,0.35);
+    }
+    .btn-op:hover { filter: brightness(1.15); }
+
+    /* Clear / backspace */
+    .btn-clear {
+      background: #2a1a2e;
+      color: #ff6b9d;
+    }
+    .btn-clear:hover { background: #3a1f3a; }
+
+    /* Equals */
+    .btn-eq {
+      background: linear-gradient(135deg, #fa6d6d, #e04444);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(250,109,109,0.35);
+    }
+    .btn-eq:hover { filter: brightness(1.1); }
+
+    /* Span */
+    .span2 { grid-column: span 2; }
+
+    /* Ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      transform: scale(0);
+      animation: ripple 0.4s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* Keyboard hint */
+    .hint {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<p class="brand">CodeAlpha · Calculator</p>
+
+<div class="calculator" role="application" aria-label="Calculator">
+  <div class="display" aria-live="polite">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="buttons">
+    <!-- Row 1 -->
+    <button class="btn-clear" data-action="clear" aria-label="Clear all">AC</button>
+    <button class="btn-clear" data-action="sign"  aria-label="Toggle sign">+/−</button>
+    <button class="btn-clear" data-action="percent" aria-label="Percent">%</button>
+    <button class="btn-op"    data-action="op" data-value="÷" aria-label="Divide">÷</button>
+
+    <!-- Row 2 -->
+    <button class="btn-num" data-action="num" data-value="7">7</button>
+    <button class="btn-num" data-action="num" data-value="8">8</button>
+    <button class="btn-num" data-action="num" data-value="9">9</button>
+    <button class="btn-op"  data-action="op"  data-value="×" aria-label="Multiply">×</button>
+
+    <!-- Row 3 -->
+    <button class="btn-num" data-action="num" data-value="4">4</button>
+    <button class="btn-num" data-action="num" data-value="5">5</button>
+    <button class="btn-num" data-action="num" data-value="6">6</button>
+    <button class="btn-op"  data-action="op"  data-value="−" aria-label="Subtract">−</button>
+
+    <!-- Row 4 -->
+    <button class="btn-num" data-action="num" data-value="1">1</button>
+    <button class="btn-num" data-action="num" data-value="2">2</button>
+    <button class="btn-num" data-action="num" data-value="3">3</button>
+    <button class="btn-op"  data-action="op"  data-value="+" aria-label="Add">+</button>
+
+    <!-- Row 5 -->
+    <button class="btn-num span2" data-action="num" data-value="0">0</button>
+    <button class="btn-num" data-action="decimal" aria-label="Decimal">.</button>
+    <button class="btn-eq"  data-action="equals" aria-label="Equals">=</button>
+
+    <!-- Row 6 – extras -->
+    <button class="btn-clear" data-action="backspace" aria-label="Backspace">⌫</button>
+    <button class="btn-clear" data-action="sqrt"  aria-label="Square root">√</button>
+    <button class="btn-clear" data-action="square" aria-label="Square">x²</button>
+    <button class="btn-clear" data-action="inverse" aria-label="Inverse">1/x</button>
+  </div>
+</div>
+
+<p class="hint">Keyboard supported · 0–9 · + − * / · Enter · Backspace</p>
+
+<script>
+  const expressionEl = document.getElementById('expression');
+  const resultEl     = document.getElementById('result');
+
+  let currentVal  = '0';
+  let prevVal     = '';
+  let operator    = '';
+  let justEvaled  = false;
+
+  /* ── display ── */
+  function updateDisplay(val, expr = '') {
+    expressionEl.textContent = expr;
+    resultEl.textContent = val;
+    resultEl.className = 'result';
+    if (val.length > 12) resultEl.classList.add('small');
+    if (val === 'Error') resultEl.classList.add('error');
+  }
+
+  /* ── evaluate ── */
+  function calc(a, op, b) {
+    const x = parseFloat(a), y = parseFloat(b);
+    if (op === '+') return x + y;
+    if (op === '−') return x - y;
+    if (op === '×') return x * y;
+    if (op === '÷') {
+      if (y === 0) return 'Error';
+      return x / y;
+    }
+    return b;
+  }
+
+  function fmt(n) {
+    if (n === 'Error') return 'Error';
+    const s = parseFloat(n.toPrecision(12)).toString();
+    return s;
+  }
+
+  /* ── actions ── */
+  function handleAction(action, value) {
+    switch (action) {
+      case 'num':
+        if (justEvaled) { currentVal = ''; justEvaled = false; }
+        if (currentVal === '0' && value !== '.') currentVal = value;
+        else if (currentVal.length < 15) currentVal += value;
+        updateDisplay(currentVal, operator ? `${prevVal} ${operator}` : '');
+        break;
+
+      case 'decimal':
+        if (justEvaled) { currentVal = '0'; justEvaled = false; }
+        if (!currentVal.includes('.')) currentVal += '.';
+        updateDisplay(currentVal, operator ? `${prevVal} ${operator}` : '');
+        break;
+
+      case 'op':
+        justEvaled = false;
+        if (operator && prevVal && currentVal !== '') {
+          const res = calc(prevVal, operator, currentVal);
+          if (res === 'Error') { updateDisplay('Error'); resetState(); return; }
+          prevVal = fmt(res);
+          currentVal = '';
+          updateDisplay(prevVal, `${prevVal} ${value}`);
+        } else {
+          prevVal = currentVal || prevVal || '0';
+          currentVal = '';
+          updateDisplay(prevVal, `${prevVal} ${value}`);
+        }
+        operator = value;
+        break;
+
+      case 'equals':
+        if (!operator || !prevVal) break;
+        const target = currentVal !== '' ? currentVal : prevVal;
+        const res = calc(prevVal, operator, target);
+        const display = res === 'Error' ? 'Error' : fmt(res);
+        updateDisplay(display, `${prevVal} ${operator} ${target} =`);
+        currentVal = display;
+        prevVal = '';
+        operator = '';
+        justEvaled = true;
+        break;
+
+      case 'clear':
+        resetState();
+        updateDisplay('0');
+        break;
+
+      case 'backspace':
+        if (justEvaled) { resetState(); updateDisplay('0'); break; }
+        currentVal = currentVal.length > 1 ? currentVal.slice(0, -1) : '0';
+        updateDisplay(currentVal, operator ? `${prevVal} ${operator}` : '');
+        break;
+
+      case 'sign':
+        if (currentVal && currentVal !== '0') {
+          currentVal = currentVal.startsWith('-') ? currentVal.slice(1) : '-' + currentVal;
+          updateDisplay(currentVal, operator ? `${prevVal} ${operator}` : '');
+        }
+        break;
+
+      case 'percent':
+        if (currentVal) {
+          currentVal = fmt(parseFloat(currentVal) / 100);
+          updateDisplay(currentVal, operator ? `${prevVal} ${operator}` : '');
+        }
+        break;
+
+      case 'sqrt':
+        if (currentVal) {
+          const n = parseFloat(currentVal);
+          if (n < 0) { updateDisplay('Error'); return; }
+          currentVal = fmt(Math.sqrt(n));
+          updateDisplay(currentVal);
+        }
+        break;
+
+      case 'square':
+        if (currentVal) {
+          currentVal = fmt(parseFloat(currentVal) ** 2);
+          updateDisplay(currentVal);
+        }
+        break;
+
+      case 'inverse':
+        if (currentVal) {
+          if (parseFloat(currentVal) === 0) { updateDisplay('Error'); return; }
+          currentVal = fmt(1 / parseFloat(currentVal));
+          updateDisplay(currentVal);
+        }
+        break;
+    }
+  }
+
+  function resetState() {
+    currentVal = '0'; prevVal = ''; operator = ''; justEvaled = false;
+  }
+
+  /* ── click handler ── */
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', e => {
+      rippleEffect(e, btn);
+      handleAction(btn.dataset.action, btn.dataset.value);
+    });
+  });
+
+  /* ── keyboard ── */
+  document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') handleAction('num', e.key);
+    else if (e.key === '.') handleAction('decimal');
+    else if (e.key === '+') handleAction('op', '+');
+    else if (e.key === '-') handleAction('op', '−');
+    else if (e.key === '*') handleAction('op', '×');
+    else if (e.key === '/') { e.preventDefault(); handleAction('op', '÷'); }
+    else if (e.key === 'Enter' || e.key === '=') handleAction('equals');
+    else if (e.key === 'Backspace') handleAction('backspace');
+    else if (e.key === 'Escape') handleAction('clear');
+    else if (e.key === '%') handleAction('percent');
+  });
+
+  /* ── ripple ── */
+  function rippleEffect(e, btn) {
+    const circle = document.createElement('span');
+    const d = Math.max(btn.clientWidth, btn.clientHeight);
+    const r = btn.getBoundingClientRect();
+    circle.className = 'ripple';
+    circle.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;
+    btn.appendChild(circle);
+    circle.addEventListener('animationend', () => circle.remove());
+  }
+</script>
+</body>
+</html>
